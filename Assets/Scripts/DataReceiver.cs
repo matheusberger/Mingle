@@ -47,26 +47,62 @@ public class DataReceiver : MonoBehaviour
 {
     public SocketIOComponent socket;
 
-    public GameObject playerPrefab;
-    private Dictionary<string, Player> players;
+    public GameObject npcPrefab;
+    private Dictionary<string, Player> npcs = new Dictionary<string, Player>();
 
     void Start()
     {
         socket.On("connect", (SocketIOEvent e) =>
         {
-            players = new Dictionary<string, Player>();
             print(e.data);
         });
 
         socket.On("update", (SocketIOEvent e) =>
         {
-            //e.data.RemoveField(socket.sid); //remove self from data;
-            var playerIDS = e.data.ToDictionary().Keys;
-            
-            foreach (var id in playerIDS)
+            if(e.data.HasField(socket.sid))
             {
-                print(id);
+                e.data.RemoveField(socket.sid);
+            }
+
+            foreach (var id in e.data.keys)
+            {
+                StartCoroutine(UpdateNPC(id, e.data.GetField(id)));
+                //UpdateNPC(id, e.data.GetField(id));
             }
         });
+    }
+
+    private Vector2 GetPosition(JSONObject data)
+    {
+        return new Vector2(data.GetField("x").f, data.GetField("z").f);
+    }
+
+    private float GetRotation(JSONObject data)
+    {
+        return data.GetField("r").f;
+    }
+
+    private IEnumerator<int> UpdateNPC(string id, JSONObject data)
+    {
+        Vector2 position = GetPosition(data);
+        //float rotation = GetRotation(data);
+
+        if (npcs.ContainsKey(id))
+        {
+            print("updating player position");
+            npcs[id].SetPosition(position.x, position.y);
+            //npcs[id].SetRotation(rotation);
+        }
+        else
+        {
+            print("new player detected with id: " + id);
+
+            var prefab = GameObject.Instantiate(npcPrefab, new Vector3(position.x, 0, position.y), Quaternion.identity);
+            var npc = new Player(0, id, position.x, position.y, 0.0f, prefab.GetComponent<RemoteController>());
+
+            npcs.Add(id, npc);
+        }
+
+        yield return 0;
     }
 }

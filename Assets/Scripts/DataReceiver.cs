@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
-using SocketIO;
 using System.Collections.Generic;
+using UnitySocketIO;
+using UnitySocketIO.Events;
+using System;
+using System.Linq;
 
 public interface IPlayerListener
 {
@@ -8,17 +11,18 @@ public interface IPlayerListener
     void MovePlayer(Vector2 target);
 }
 
-public class Player
+[System.Serializable]
+public class PlayerData
 {
-    int id;
-    string socketID;
+    public int id;
+    public string socketID;
 
-    private Vector2 position;
-    private float rotation;
+    public Vector2 position;
+    public float rotation;
 
     private IPlayerListener listener;
 
-    public Player(int _id, string _socketID, float x, float z, float _rotarion, IPlayerListener _listerner)
+    public PlayerData(int _id, string _socketID, float x, float z, float _rotarion, IPlayerListener _listerner)
     {
         id = _id;
         socketID = _socketID;
@@ -33,72 +37,80 @@ public class Player
         position.x = x;
         position.y = z;
 
-        listener.MovePlayer(position);
+        if(listener != null)
+        {
+            listener.MovePlayer(position);
+        }
     }
 
     public void SetRotation(float _rotation)
     {
         rotation = _rotation;
-        listener.RotatePlayer(rotation);
+        if (listener != null)
+        {
+            listener.RotatePlayer(rotation);
+        }
     }
+
+    public void SetListener(IPlayerListener _listener)
+    {
+        listener = _listener;
+    }
+}
+
+[System.Serializable]
+public class PlayerDataArray
+{
+    public PlayerData[] data;
 }
 
 public class DataReceiver : MonoBehaviour
 {
-    public SocketIOComponent socket;
+    public SocketIOController socket;
+    private bool connected = false;
 
     public GameObject npcPrefab;
-    private Dictionary<string, Player> npcs = new Dictionary<string, Player>();
+    private Dictionary<string, PlayerData> npcs = new Dictionary<string, PlayerData>();
 
     void Start()
     {
         socket.On("connect", (SocketIOEvent e) =>
         {
-            print(e.data);
+            connected = true;
         });
 
         socket.On("update", (SocketIOEvent e) =>
         {
-            if(e.data.HasField(socket.sid))
-            {
-                e.data.RemoveField(socket.sid);
-            }
+            var players = JsonUtility.FromJson<PlayerDataArray>(e.data);
+            print("updating " + players.data.Length + " players");
 
-            foreach (var id in e.data.keys)
+            foreach (var playerData in players.data)
             {
-                StartCoroutine(UpdateNPC(id, e.data.GetField(id)));
-                //UpdateNPC(id, e.data.GetField(id));
+                if(playerData.socketID != socket.SocketID)
+                {
+                    StartCoroutine(UpdateNPC(playerData.socketID, playerData));
+                }
             }
         });
+
+        socket.Connect();
     }
 
-    private Vector2 GetPosition(JSONObject data)
+    private IEnumerator<int> UpdateNPC(string id, PlayerData data)
     {
-        return new Vector2(data.GetField("x").f, data.GetField("z").f);
-    }
-
-    private float GetRotation(JSONObject data)
-    {
-        return data.GetField("r").f;
-    }
-
-    private IEnumerator<int> UpdateNPC(string id, JSONObject data)
-    {
-        Vector2 position = GetPosition(data);
-        //float rotation = GetRotation(data);
-
         if (npcs.ContainsKey(id))
         {
-            print("updating player position");
-            npcs[id].SetPosition(position.x, position.y);
-            //npcs[id].SetRotation(rotation);
+            npcs[id].SetPosition(data.position.x, data.position.y);
+            npcs[id].SetRotation(data.rotation);
         }
         else
         {
             print("new player detected with id: " + id);
 
-            var prefab = GameObject.Instantiate(npcPrefab, new Vector3(position.x, 0, position.y), Quaternion.identity);
-            var npc = new Player(0, id, position.x, position.y, 0.0f, prefab.GetComponent<RemoteController>());
+            var prefab = GameObject.Instantiate(npcPrefab, new Vector3(data.position.x, 0, data.position.y), Quaternion.identity);
+            var npc = data;
+            
+            npc.SetListener(prefab.GetComponent<RemoteController>());
 
             npcs.Add(id, npc);
         }

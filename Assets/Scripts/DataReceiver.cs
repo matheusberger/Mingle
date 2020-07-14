@@ -82,7 +82,7 @@ public class DataReceiver : MonoBehaviour
         socket.On("update", (SocketIOEvent e) =>
         {
             var players = JsonUtility.FromJson<PlayerDataArray>(e.data);
-            print("updating " + players.data.Length + " players");
+            print("updating " + (players.data.Length - 1) + " players");
 
             foreach (var playerData in players.data)
             {

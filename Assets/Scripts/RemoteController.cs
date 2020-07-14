@@ -13,13 +13,12 @@ public class RemoteController : MonoBehaviour, IPlayerListener
 
     public void MovePlayer(Vector2 target)
     {
-        print("moving npc");
         Vector3 target3D = new Vector3(target.x, transform.position.y, target.y);
-        characterController.Move(target3D - transform.position);
+        characterController.Move((target3D - transform.position)* Time.deltaTime);
     }
 
     public void RotatePlayer(float rotation)
     {
-        throw new System.NotImplementedException();
+        transform.rotation = new Quaternion(0.0f, rotation, 0.0f, transform.rotation.w);
     }
 }

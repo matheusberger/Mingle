@@ -52,6 +52,7 @@ By default the SampleScene is configured to connect to the server at Heroku. Hit
 - [ ] Send and receive users' audio stream
 - [ ] Send and receive users' video stream
 - [ ] Build to WebGL and host it online
+- [ ] Add images to facilitate readme's understanding
 
 ## Known Issues
 
@@ -61,5 +62,12 @@ This project is copyright of [VoxarLabs](https://www.cin.ufpe.br/~voxarlabs/)
 
 ## Contributors
 
-- Matheus Berger @matheusberger
-- Lucas Figueiredo @lsf
+- Matheus Berger [@matheusberger](https://github.com/matheusberger)
+- Lucas Figueiredo [@lsf](https://github.com/lsfcin)
+
+## Links used in this project
+
+- [StackOverflow: video/audio streaming with socket.io](https://stackoverflow.com/questions/49868353/send-video-audio-over-socket-io-from-browser)
+- [NPM Package: socket.io streaming](https://www.npmjs.com/package/socket.io-stream)
+- [Node.js: Stream API](https://nodejs.org/api/stream.html)
+- [Github: JS Stream Handbook](https://github.com/substack/stream-handbook)

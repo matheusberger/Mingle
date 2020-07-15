@@ -14,12 +14,13 @@ Check the website for reference and inspiration.
 
 ## Getting Started
 
-This prototype is made of 2 parts: the Unity3D project and a Node.js server that is hosted at [Heroku](https://mingle-server-1.herokuapp.com/), but the code is availeble [here](https://github.com/matheusberger/Mingle-Server), along with instructions if you wish to run it locally.
+This prototype is made of 2 parts: the Unity3D project and a Node.js server that is hosted at [Heroku](https://mingle-server-1.herokuapp.com/), but the code is available [here](https://github.com/matheusberger/Mingle-Server), along with instructions if you wish to run it locally.
 
 ### Requirements
 
 - Unity 2019.4 or later
 - Node.js (if running locally)
+- Internet connection
 
 ## Usage
 
@@ -53,8 +54,12 @@ By default the SampleScene is configured to connect to the server at Heroku. Hit
 - [ ] Build to WebGL and host it online
 
 ## Known Issues
-[//]: # (https://github.com/OfficeDev/Open-XML-SDK#Known-Issues)
+
 ## Copyright
-[//]: # (https://github.com/NancyFx/Nancy#Copyright)
+
+This project is copyright of [VoxarLabs](https://www.cin.ufpe.br/~voxarlabs/)
+
 ## Contributors
-[//]: # (https://github.com/NancyFx/Nancy#Contributors)
+
+- Matheus Berger @matheusberger
+- Lucas Figueiredo @lsf

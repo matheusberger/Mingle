@@ -66,34 +66,23 @@ public class PlayerDataArray
 
 public class DataReceiver : MonoBehaviour
 {
-    public SocketIOController socket;
-    private bool connected = false;
+    public SocketManager socketManager;
 
     public GameObject npcPrefab;
     private Dictionary<string, PlayerData> npcs = new Dictionary<string, PlayerData>();
 
     void Start()
     {
-        socket.On("connect", (SocketIOEvent e) =>
+        socketManager.ReceiveData((PlayerDataArray dataArray) =>
         {
-            connected = true;
-        });
-
-        socket.On("update", (SocketIOEvent e) =>
-        {
-            var players = JsonUtility.FromJson<PlayerDataArray>(e.data);
-            print("updating " + (players.data.Length - 1) + " players");
-
-            foreach (var playerData in players.data)
+            foreach (var playerData in dataArray.data)
             {
-                if(playerData.socketID != socket.SocketID)
+                if (playerData.socketID != socketManager.GetSocketID())
                 {
                     StartCoroutine(UpdateNPC(playerData.socketID, playerData));
                 }
             }
         });
-
-        socket.Connect();
     }
 
     private IEnumerator<int> UpdateNPC(string id, PlayerData data)

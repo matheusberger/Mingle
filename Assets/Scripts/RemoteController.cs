@@ -14,7 +14,10 @@ public class RemoteController : MonoBehaviour, IPlayerListener
     public void MovePlayer(Vector2 target)
     {
         Vector3 target3D = new Vector3(target.x, transform.position.y, target.y);
-        characterController.Move((target3D - transform.position)* Time.deltaTime);
+        if(characterController != null)
+        {
+            characterController.Move((target3D - transform.position) * Time.deltaTime);
+        }
     }
 
     public void RotatePlayer(float rotation)

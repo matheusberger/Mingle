@@ -94,7 +94,7 @@ public class DataReceiver : MonoBehaviour
         }
         else
         {
-            print("new player detected with id: " + id);
+            print("new player detected");
 
             var prefab = GameObject.Instantiate(npcPrefab, new Vector3(data.position.x, 0, data.position.y), Quaternion.identity);
             var npc = data;

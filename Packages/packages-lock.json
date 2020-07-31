@@ -113,6 +113,13 @@
         "com.unity.modules.ui": "1.0.0"
       }
     },
+    "com.unity.webrtc": {
+      "version": "2.0.4-preview",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

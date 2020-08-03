@@ -50,6 +50,23 @@ public class SocketManager : MonoBehaviour
         socket.Emit("position", json);
     }
 
+    public void SendICECandidate(RTCIceCandidate candidate)
+    {
+        var json = JsonUtility.ToJson(candidate);
+
+        socket.Emit("ice-candidate", json);
+    }
+
+    public void AwaitICECandidate(Action<RTCIceCandidate> callback)
+    {
+        socket.On("ice-candidate", data =>
+        {
+            print("received ice candidate from server");
+            var candidate = JsonUtility.FromJson<RTCIceCandidate>(data.data);
+            callback(candidate);
+        });
+    }
+
     public void SendRTCOffer(RTCSessionDescription offerDesc, Action<RTCSessionDescription> callback)
     {
         print("Sending offer to server");

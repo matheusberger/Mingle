@@ -38,18 +38,6 @@ public class AudioTest : MonoBehaviour
         WebRTC.Initialize();
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        if(socketManager.ConfirmConnection())
-        {
-            socketManager.AwaitRTCOffer(offer =>
-            {
-                StartCoroutine(CreateAnswer(offer));
-            });
-        }
-    }
-
     private void Update()
     {
         if(Input.GetButtonDown("Jump"))
@@ -60,29 +48,46 @@ public class AudioTest : MonoBehaviour
 
     IEnumerator Call()
     {
-        var configuration = GetSelectedSdpSemantics();
-        peerConnection = new RTCPeerConnection(ref configuration);
-        peerConnection.OnIceCandidate = e =>
+        if (socketManager.ConfirmConnection())
         {
-            if (!string.IsNullOrEmpty(e.candidate))
+            var configuration = GetSelectedSdpSemantics();
+            peerConnection = new RTCPeerConnection(ref configuration);
+            peerConnection.OnIceCandidate = e =>
             {
-                //send candidate to server
+                if (!string.IsNullOrEmpty(e.candidate))
+                {
+                    //send candidate to server
+                    socketManager.SendICECandidate(e);
+                }
+            };
+            peerConnection.OnIceConnectionChange = (RTCIceConnectionState state) =>
+            {
+                print("local ice status: " + state);
+            };
+
+            socketManager.AwaitRTCOffer(offer =>
+            {
+                StartCoroutine(CreateAnswer(offer));
+            });
+
+            socketManager.AwaitICECandidate(candidate =>
+           {
+               if (!string.IsNullOrEmpty(candidate.candidate))
+               {
+                   peerConnection.AddIceCandidate(ref candidate);
+               }
+           });
+
+            var dataConfig = new RTCDataChannelInit(true);
+            dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
+
+            var op = peerConnection.CreateOffer(ref OfferOptions);
+            yield return op;
+
+            if (!op.IsError)
+            {
+                yield return StartCoroutine(OnCreateOffer(op.Desc));
             }
-        };
-        peerConnection.OnIceConnectionChange = (RTCIceConnectionState state) =>
-        {
-            print("local ice status: " + state);
-        };
-
-        var dataConfig = new RTCDataChannelInit(true);
-        dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
-
-        var op = peerConnection.CreateOffer(ref OfferOptions);
-        yield return op;
-
-        if (!op.IsError)
-        {
-            yield return StartCoroutine(OnCreateOffer(op.Desc));
         }
     }
 

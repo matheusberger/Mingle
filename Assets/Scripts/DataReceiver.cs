@@ -73,7 +73,7 @@ public class DataReceiver : MonoBehaviour
 
     void Start()
     {
-        socketManager.ReceiveData((PlayerDataArray dataArray) =>
+        socketManager.ReceivePlayerData((PlayerDataArray dataArray) =>
         {
             foreach (var playerData in dataArray.data)
             {

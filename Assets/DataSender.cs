@@ -28,7 +28,7 @@ public class DataSender : MonoBehaviour
             playerData.SetPosition(jammo.transform.position.x, jammo.transform.position.z);
             playerData.SetRotation(jammo.transform.rotation.y);
 
-            socketManager.SendData(playerData);
+            socketManager.SendPlayerData(playerData);
         }
     }
 }

@@ -41,12 +41,13 @@ public class AudioTest : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        socketManager.ListenToOffers(offer =>
+        if(socketManager.ConfirmConnection())
         {
-            var desc = new RTCSessionDescription();
-            desc.sdp = offer.data;
-            StartCoroutine(CreateAnswer(desc));
-        });
+            socketManager.AwaitRTCOffer(offer =>
+            {
+                StartCoroutine(CreateAnswer(offer));
+            });
+        }
     }
 
     private void Update()
@@ -66,12 +67,11 @@ public class AudioTest : MonoBehaviour
             if (!string.IsNullOrEmpty(e.candidate))
             {
                 //send candidate to server
-                socketManager.SendIceCandidate(e);
             }
         };
         peerConnection.OnIceConnectionChange = (RTCIceConnectionState state) =>
         {
-            print("local ice mudou de estado: " + state);
+            print("local ice status: " + state);
         };
 
         var dataConfig = new RTCDataChannelInit(true);
@@ -93,15 +93,15 @@ public class AudioTest : MonoBehaviour
 
         if (!op.IsError)
         {
-            //send desc to server
-            socketManager.SendOffer(offerDesc);
-            // and wait for answer
+            socketManager.SendRTCOffer(offerDesc, answer =>
+            {
+                StartCoroutine(OnReceiveAnswer(answer));
+            });
         }
     }
 
     IEnumerator OnReceiveAnswer(RTCSessionDescription desc)
     {
-        print("recebi uma resposta");
         var op = peerConnection.SetRemoteDescription(ref desc);
         yield return op;
 
@@ -114,7 +114,6 @@ public class AudioTest : MonoBehaviour
 
     IEnumerator CreateAnswer(RTCSessionDescription desc)
     {
-        print("recebi proposta, vou criar resposta");
         var op = peerConnection.SetRemoteDescription(ref desc);
         yield return op;
 
@@ -139,8 +138,7 @@ public class AudioTest : MonoBehaviour
 
         if (!op.IsError)
         {
-            print("to enviando a resposta");
-            socketManager.SendAnswer(desc);
+            //send answer
         }
     }
 

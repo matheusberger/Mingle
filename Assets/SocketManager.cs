@@ -5,24 +5,12 @@ using UnitySocketIO;
 using UnitySocketIO.Events;
 
 
-public struct Offer
+public struct RTCDesc
 {
     public string sid;
     public string data;
 
-    public Offer(string id, string desc)
-    {
-        sid = id;
-        data = desc;
-    }
-}
-
-public struct Answer
-{
-    public string sid;
-    public string data;
-
-    public Answer(string id, string desc)
+    public RTCDesc(string id, string desc)
     {
         sid = id;
         data = desc;
@@ -46,7 +34,7 @@ public class SocketManager : MonoBehaviour
         return socket.SocketID;
     }
 
-    public void ReceiveData(Action<PlayerDataArray> callback)
+    public void ReceivePlayerData(Action<PlayerDataArray> callback)
     {
         socket.On("update", (SocketIOEvent e) =>
         {
@@ -55,41 +43,49 @@ public class SocketManager : MonoBehaviour
         });
     }
 
-    public void SendData(PlayerData playerData)
+    public void SendPlayerData(PlayerData playerData)
     {
         var json = JsonUtility.ToJson(playerData);
 
         socket.Emit("position", json);
     }
 
-    public void SendOffer(RTCSessionDescription desc)
+    public void SendRTCOffer(RTCSessionDescription offerDesc, Action<RTCSessionDescription> callback)
     {
-        Offer offer = new Offer(socket.SocketID, desc.sdp);
+        print("Sending offer to server");
 
-        var json = JsonUtility.ToJson(offer);
+        var json = JsonUtility.ToJson(offerDesc);
         socket.Emit("offer", json);
+
+        AwaitRTCAnswer(callback);
     }
 
-    public void ListenToOffers(Action<Offer> callback)
+    private void AwaitRTCAnswer(Action<RTCSessionDescription> callback)
     {
-        socket.On("offer", (SocketIOEvent e) =>
+        socket.On("answer", data =>
         {
-            var offer = JsonUtility.FromJson<Offer>(e.data);
-            print("received offer");
+            print("received answer from server: " + data.data);
+            var answer = JsonUtility.FromJson<RTCSessionDescription>(data.data);
+            callback(answer);
+        });
+    }
+
+    public void AwaitRTCOffer(Action<RTCSessionDescription> callback)
+    {
+        socket.On("offer", data =>
+        {
+            print("received offer from server");
+
+            var offer = JsonUtility.FromJson<RTCSessionDescription>(data.data);
             callback(offer);
         });
     }
 
-    public void SendIceCandidate(RTCIceCandidate candidate)
+    public void SendRTCAnswer(RTCSessionDescription answerDesc)
     {
-        print("sending ice candidate");
-        socket.Emit("candidate");
-    }
+        print("Sending offer to server");
 
-    public void SendAnswer(RTCSessionDescription desc)
-    {
-        Answer answer = new Answer(socket.SocketID, desc.sdp);
-        var json = JsonUtility.ToJson(answer);
+        var json = JsonUtility.ToJson(answerDesc);
         socket.Emit("answer", json);
     }
 

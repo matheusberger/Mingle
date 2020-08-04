@@ -81,13 +81,13 @@ public class AudioTest : MonoBehaviour
             var dataConfig = new RTCDataChannelInit(true);
             dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
 
-            var op = peerConnection.CreateOffer(ref OfferOptions);
-            yield return op;
+           var op = peerConnection.CreateOffer(ref OfferOptions);
+           yield return op;
 
-            if (!op.IsError)
-            {
-                yield return StartCoroutine(OnCreateOffer(op.Desc));
-            }
+            //if (!op.IsError)
+            //{
+                //yield return StartCoroutine(OnCreateOffer(op.Desc));
+            //}
         }
     }
 
@@ -124,7 +124,6 @@ public class AudioTest : MonoBehaviour
 
         if  (!op.IsError)
         {
-            print("setei remote sem erro");
             var op2 = peerConnection.CreateAnswer(ref AnswerOptions);
             yield return op2;
 
@@ -133,17 +132,21 @@ public class AudioTest : MonoBehaviour
                 yield return OnCreateAnswerSuccess(op2.Desc);
             }
         }
+        else
+        {
+            print(op.Error);
+        }
     }
 
     IEnumerator OnCreateAnswerSuccess(RTCSessionDescription desc)
     {
-        print("criei resposta sem erro");
         var op = peerConnection.SetLocalDescription(ref desc);
         yield return op;
 
         if (!op.IsError)
         {
             //send answer
+            socketManager.SendRTCAnswer(desc);
         }
     }
 

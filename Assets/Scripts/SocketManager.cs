@@ -5,19 +5,6 @@ using UnitySocketIO;
 using UnitySocketIO.Events;
 
 
-public struct RTCDesc
-{
-    public string sid;
-    public string data;
-
-    public RTCDesc(string id, string desc)
-    {
-        sid = id;
-        data = desc;
-    }
-}
-
-
 public class SocketManager : MonoBehaviour
 {
     public SocketIOController socket;
@@ -100,7 +87,7 @@ public class SocketManager : MonoBehaviour
 
     public void SendRTCAnswer(RTCSessionDescription answerDesc)
     {
-        print("Sending offer to server");
+        print("Sending answer to server");
 
         var json = JsonUtility.ToJson(answerDesc);
         socket.Emit("answer", json);

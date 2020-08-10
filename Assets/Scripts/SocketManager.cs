@@ -76,6 +76,7 @@ public class SocketManager : MonoBehaviour
 
     public void AwaitRTCOffer(Action<RTCSessionDescription> callback)
     {
+        print("Listening to webRTC offers");
         socket.On("offer", data =>
         {
             print("received offer from server");

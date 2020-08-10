@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using Unity.WebRTC;
+using Boo.Lang;
 
 public class AudioTest : MonoBehaviour
 {
@@ -9,6 +10,11 @@ public class AudioTest : MonoBehaviour
 
     private RTCPeerConnection peerConnection;
     private RTCDataChannel dataChannel;
+
+    private List<RTCRtpSender> peerSenders;
+    private List<RTCRtpSender> peerReceivers;
+    private MediaStream audioStream;
+    private bool audioUpdateStarted = false;
 
     private RTCOfferOptions OfferOptions = new RTCOfferOptions
     {
@@ -36,6 +42,16 @@ public class AudioTest : MonoBehaviour
     private void Awake()
     {
         WebRTC.Initialize();
+        peerSenders = new List<RTCRtpSender>();
+        peerReceivers = new List<RTCRtpSender>();
+    }
+
+    private void Start()
+    {
+        socketManager.AwaitRTCOffer(offer =>
+        {
+            StartCoroutine(CreateAnswer(offer));
+        });
     }
 
     private void Update()
@@ -43,6 +59,19 @@ public class AudioTest : MonoBehaviour
         if(Input.GetButtonDown("Jump"))
         {
             StartCoroutine(Call());
+        }
+    }
+
+    private void AddTracks()
+    {
+        foreach (var track in audioStream.GetTracks())
+        {
+            peerSenders.Add(peerConnection.AddTrack(track, audioStream));
+        }
+        if (!audioUpdateStarted)
+        {
+            StartCoroutine(WebRTC.Update());
+            audioUpdateStarted = true;
         }
     }
 
@@ -65,11 +94,6 @@ public class AudioTest : MonoBehaviour
                 print("local ice status: " + state);
             };
 
-            socketManager.AwaitRTCOffer(offer =>
-            {
-                StartCoroutine(CreateAnswer(offer));
-            });
-
             socketManager.AwaitICECandidate(candidate =>
            {
                if (!string.IsNullOrEmpty(candidate.candidate))
@@ -78,16 +102,24 @@ public class AudioTest : MonoBehaviour
                }
            });
 
+            audioStream = Audio.CaptureStream();
+            peerConnection.OnTrack = e =>
+            {
+                print("remote added a track");
+                peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
+            };
+            AddTracks();
+
             var dataConfig = new RTCDataChannelInit(true);
             dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
 
            var op = peerConnection.CreateOffer(ref OfferOptions);
            yield return op;
 
-            //if (!op.IsError)
-            //{
-                //yield return StartCoroutine(OnCreateOffer(op.Desc));
-            //}
+            if (!op.IsError)
+            {
+                yield return StartCoroutine(OnCreateOffer(op.Desc));
+            }
         }
     }
 

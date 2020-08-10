@@ -77,13 +77,11 @@ public class AudioTest : MonoBehaviour
         peerConnection.OnTrack = e =>
         {
             print("remote added a track");
-            print(" before i had " + peerConnection.GetSenders().Count());
             peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
-            print(" now i have " + peerConnection.GetSenders().Count());
         };
 
-        var dataConfig = new RTCDataChannelInit(true);
-        dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
+        //var dataConfig = new RTCDataChannelInit(true);
+        //dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
 
         socketManager.AwaitRTCOffer(offer =>
         {

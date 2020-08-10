@@ -48,6 +48,40 @@ public class AudioTest : MonoBehaviour
 
     private void Start()
     {
+        var configuration = GetSelectedSdpSemantics();
+        peerConnection = new RTCPeerConnection(ref configuration);
+        peerConnection.OnIceCandidate = e =>
+        {
+            if (!string.IsNullOrEmpty(e.candidate))
+            {
+                //send candidate to server
+                socketManager.SendICECandidate(e);
+            }
+        };
+        peerConnection.OnIceConnectionChange = (RTCIceConnectionState state) =>
+        {
+            print("local ice status: " + state);
+        };
+
+        socketManager.AwaitICECandidate(candidate =>
+        {
+            if (!string.IsNullOrEmpty(candidate.candidate))
+            {
+                peerConnection.AddIceCandidate(ref candidate);
+            }
+        });
+
+        audioStream = Audio.CaptureStream();
+        peerConnection.OnTrack = e =>
+        {
+            print("remote added a track");
+            peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
+        };
+        AddTracks();
+
+        var dataConfig = new RTCDataChannelInit(true);
+        dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
+
         socketManager.AwaitRTCOffer(offer =>
         {
             StartCoroutine(CreateAnswer(offer));
@@ -79,40 +113,6 @@ public class AudioTest : MonoBehaviour
     {
         if (socketManager.ConfirmConnection())
         {
-            var configuration = GetSelectedSdpSemantics();
-            peerConnection = new RTCPeerConnection(ref configuration);
-            peerConnection.OnIceCandidate = e =>
-            {
-                if (!string.IsNullOrEmpty(e.candidate))
-                {
-                    //send candidate to server
-                    socketManager.SendICECandidate(e);
-                }
-            };
-            peerConnection.OnIceConnectionChange = (RTCIceConnectionState state) =>
-            {
-                print("local ice status: " + state);
-            };
-
-            socketManager.AwaitICECandidate(candidate =>
-           {
-               if (!string.IsNullOrEmpty(candidate.candidate))
-               {
-                   peerConnection.AddIceCandidate(ref candidate);
-               }
-           });
-
-            audioStream = Audio.CaptureStream();
-            peerConnection.OnTrack = e =>
-            {
-                print("remote added a track");
-                peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
-            };
-            AddTracks();
-
-            var dataConfig = new RTCDataChannelInit(true);
-            dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
-
            var op = peerConnection.CreateOffer(ref OfferOptions);
            yield return op;
 

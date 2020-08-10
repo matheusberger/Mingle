@@ -72,12 +72,12 @@ public class AudioTest : MonoBehaviour
         });
 
         audioStream = Audio.CaptureStream();
+        AddTracks();
         peerConnection.OnTrack = e =>
         {
             print("remote added a track");
             peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
         };
-        AddTracks();
 
         var dataConfig = new RTCDataChannelInit(true);
         dataChannel = peerConnection.CreateDataChannel("data", ref dataConfig);
@@ -145,7 +145,6 @@ public class AudioTest : MonoBehaviour
         if (!op.IsError)
         {
             //deu tudo certo!
-            print("aeee caraaaai");
         }
     }
 
@@ -180,6 +179,11 @@ public class AudioTest : MonoBehaviour
             //send answer
             socketManager.SendRTCAnswer(desc);
         }
+    }
+
+    private void OnAudioFilterRead(float[] data, int channels)
+    {
+        Audio.Update(data, channels);
     }
 
     private void OnDestroy()

@@ -104,7 +104,7 @@ public class AudioTest : MonoBehaviour
         var buffer = new NativeArray<float>(length, Allocator.Temp);
         AudioRenderer.Render(buffer);
         Audio.Update(buffer.ToArray(), buffer.Length);
-        buffer.Dispose()
+        buffer.Dispose();
     }
 
     private void AddTracks()

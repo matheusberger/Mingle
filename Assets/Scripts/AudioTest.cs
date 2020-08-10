@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.WebRTC;
 using Boo.Lang;
+using System.Linq;
 
 public class AudioTest : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class AudioTest : MonoBehaviour
     private List<RTCRtpSender> peerSenders;
     private List<RTCRtpSender> peerReceivers;
     private MediaStream audioStream;
+    [SerializeField]
     private bool audioUpdateStarted = false;
 
     private RTCOfferOptions OfferOptions = new RTCOfferOptions
@@ -75,7 +77,9 @@ public class AudioTest : MonoBehaviour
         peerConnection.OnTrack = e =>
         {
             print("remote added a track");
+            print(" before i had " + peerConnection.GetSenders().Count());
             peerReceivers.Add(peerConnection.AddTrack(e.Track, audioStream));
+            print(" now i have " + peerConnection.GetSenders().Count());
         };
 
         var dataConfig = new RTCDataChannelInit(true);
@@ -88,7 +92,6 @@ public class AudioTest : MonoBehaviour
 
         audioStream = Audio.CaptureStream();
         AddTracks();
-        AudioRenderer.Start();
     }
 
     private void Update()
@@ -97,14 +100,6 @@ public class AudioTest : MonoBehaviour
         {
             StartCoroutine(Call());
         }
-
-        var sampleCountFrame = AudioRenderer.GetSampleCountForCaptureFrame();
-        var channelCount = 2; // AudioSettings.speakerMode == Stereo
-        var length = sampleCountFrame * channelCount;
-        var buffer = new NativeArray<float>(length, Allocator.Temp);
-        AudioRenderer.Render(buffer);
-        Audio.Update(buffer.ToArray(), buffer.Length);
-        buffer.Dispose();
     }
 
     private void AddTracks()
@@ -191,17 +186,26 @@ public class AudioTest : MonoBehaviour
             socketManager.SendRTCAnswer(desc);
         }
     }
-    
-    //Not working
-    //private void OnAudioFilterRead(float[] data, int channels)
-    //{
-    //    Audio.Update(data, channels);
-    //}
+
+    private void OnAudioFilterRead(float[] data, int channels)
+    {
+        print("updating audio");
+        Audio.Update(data, channels);
+    }
 
     private void OnDestroy()
     {
         if (peerConnection != null)
         {
+            foreach (var track in peerReceivers)
+            {
+                peerConnection.RemoveTrack(track);
+            }
+            foreach (var track in peerSenders)
+            {
+                peerConnection.RemoveTrack(track);
+            }
+
             peerConnection.Close();
             peerConnection = null;
         }

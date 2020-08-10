@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using UnityEngine;
+using Unity.Collections;
 using Unity.WebRTC;
 using Boo.Lang;
 
@@ -25,7 +26,7 @@ public class AudioTest : MonoBehaviour
 
     private RTCAnswerOptions AnswerOptions = new RTCAnswerOptions
     {
-        iceRestart = false,
+        iceRestart = false
     };
 
     RTCConfiguration GetSelectedSdpSemantics()
@@ -71,8 +72,6 @@ public class AudioTest : MonoBehaviour
             }
         });
 
-        audioStream = Audio.CaptureStream();
-        AddTracks();
         peerConnection.OnTrack = e =>
         {
             print("remote added a track");
@@ -86,6 +85,10 @@ public class AudioTest : MonoBehaviour
         {
             StartCoroutine(CreateAnswer(offer));
         });
+
+        audioStream = Audio.CaptureStream();
+        AddTracks();
+        AudioRenderer.Start();
     }
 
     private void Update()
@@ -94,6 +97,14 @@ public class AudioTest : MonoBehaviour
         {
             StartCoroutine(Call());
         }
+
+        var sampleCountFrame = AudioRenderer.GetSampleCountForCaptureFrame();
+        var channelCount = 2; // AudioSettings.speakerMode == Stereo
+        var length = sampleCountFrame * channelCount;
+        var buffer = new NativeArray<float>(length, Allocator.Temp);
+        AudioRenderer.Render(buffer);
+        Audio.Update(buffer.ToArray(), buffer.Length);
+        buffer.Dispose()
     }
 
     private void AddTracks()
@@ -180,11 +191,12 @@ public class AudioTest : MonoBehaviour
             socketManager.SendRTCAnswer(desc);
         }
     }
-
-    private void OnAudioFilterRead(float[] data, int channels)
-    {
-        Audio.Update(data, channels);
-    }
+    
+    //Not working
+    //private void OnAudioFilterRead(float[] data, int channels)
+    //{
+    //    Audio.Update(data, channels);
+    //}
 
     private void OnDestroy()
     {
